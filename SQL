@@ -1,0 +1,28 @@
+SELECT	
+			MAX(dim.MONTH_BEGIN_DT) AS 'Batch Date'
+		,	MAX(ucl.service_date_dt)  AS 'Date'	
+		,	MAX(loc.LOC_NAME)  AS 'Performing Location'
+		,	MAX(eap.PROC_CODE)  AS 'CDM Code'
+		,	MAX(test.TEST_NAME) AS 'Test Name'
+		,	MAX(eapot.CPT_CODE) AS 'CPT Code'
+		,	MAX(lab.LAB_NAME)  AS 'Department'
+		,	COUNT(*)	  AS 'Volume'
+FROM CLARITY_UCL		AS ucl
+
+LEFT OUTER JOIN	CLARITY_LOC			loc		ON ucl.REVENUE_LOCATION_ID = loc.LOC_ID
+LEFT OUTER JOIN	CLARITY_EAP			eap		ON ucl.PROCEDURE_ID = eap.PROC_ID
+LEFT OUTER JOIN	TEST_MSTR_DB_MAIN	test	ON ucl.TEST_ID = test.TEST_ID
+LEFT OUTER JOIN CLARITY_EAP_OT		eapot	ON ucl.PROCEDURE_ID = eapot.PROC_ID
+
+											AND	eapot.CONTACT_DATE_REAL = (SELECT MAX(ceo.CONTACT_DATE_REAL) 
+																		   FROM CLARITY_EAP_OT  ceo
+																		   WHERE ceo.PROC_ID = eapot.PROC_ID)
+
+LEFT OUTER JOIN CLARITY_UCL_2		ucl2	ON	ucl.UCL_ID = ucl2.UCL_ID
+LEFT OUTER JOIN LAB_INFO			lab		ON  ucl2.LAB_SECTION_ID = lab.LAB_ID
+LEFT OUTER JOIN DATE_DIMENSION		dim		ON	ucl.SERVICE_DATE_DT = dim.CALENDAR_DT
+
+WHERE ucl.SERVICE_DATE_DT >= '11-01-2023'
+AND	ucl.SERVICE_DATE_DT < '12-01-2023'
+AND ucl.TEST_ID IS NOT NULL
+GROUP BY ucl.REVENUE_LOCATION_ID, ucl2.LAB_SECTION_ID, ucl.TEST_ID
